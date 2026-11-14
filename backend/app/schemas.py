@@ -45,3 +45,43 @@ class ProductDetail(ProductSummary):
     description: str
     images: list[ProductImageSummary]
 
+
+class AddCartItem(BaseModel):
+    variant_id: int
+    quantity: int
+
+
+class UpdateCartItem(BaseModel):
+    quantity: int
+
+
+class CartProductSummary(BaseModel):
+    id: int
+    name: str
+    slug: str
+    primary_image_url: str | None
+
+
+class CartVariantSummary(BaseModel):
+    id: int
+    name: str
+    sku: str
+    price_cents: int
+    stock: int
+
+
+class CartItemSummary(BaseModel):
+    id: int
+    quantity: int
+    unit_price_cents: int
+    line_total_cents: int
+    product: CartProductSummary
+    variant: CartVariantSummary
+
+
+class CartSummary(BaseModel):
+    id: int
+    items: list[CartItemSummary]
+    item_count: int
+    subtotal_cents: int
+

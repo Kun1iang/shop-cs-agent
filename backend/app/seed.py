@@ -1,8 +1,16 @@
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import SessionLocal
-from app.models import Category, Product, ProductImage, ProductVariant
+from app.models import (
+    Cart,
+    Category,
+    Product,
+    ProductImage,
+    ProductVariant,
+    User,
+)
 
 CATEGORY_SEEDS = [
     {"name": "数码配件", "slug": "digital-accessories", "sort_order": 1},
@@ -117,6 +125,21 @@ PRODUCT_SEEDS = [
 
 
 def seed_database(session: Session) -> None:
+    user = session.scalar(
+        select(User).where(User.email == settings.dev_user_email)
+    )
+    if user is None:
+        user = User(
+            email=settings.dev_user_email,
+            display_name=settings.dev_user_name,
+        )
+        session.add(user)
+        session.flush()
+
+    cart = session.scalar(select(Cart).where(Cart.user_id == user.id))
+    if cart is None:
+        session.add(Cart(user_id=user.id))
+
     categories: dict[str, Category] = {}
 
     for seed in CATEGORY_SEEDS:
