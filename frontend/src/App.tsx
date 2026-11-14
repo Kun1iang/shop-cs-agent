@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { StoreHeader } from './components/StoreHeader'
+import { CartPage } from './pages/CartPage'
 import { HomePage } from './pages/HomePage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import './App.css'
@@ -11,6 +12,7 @@ function App() {
       <main>
         <Routes>
           <Route path="/" element={<HomePage />} />
+          <Route path="/cart" element={<CartPage />} />
           <Route path="/products/:slug" element={<ProductDetailPage />} />
         </Routes>
       </main>

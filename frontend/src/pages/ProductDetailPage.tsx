@@ -1,14 +1,26 @@
-import { useQuery } from '@tanstack/react-query'
+import { useState } from 'react'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Link, useParams } from 'react-router-dom'
+import { addCartItem } from '../api/cart'
 import { fetchProduct } from '../api/products'
 import { formatMoney } from '../utils/money'
 
 export function ProductDetailPage() {
   const { slug } = useParams()
+  const queryClient = useQueryClient()
+  const [selectedVariantId, setSelectedVariantId] = useState<number | null>(
+    null,
+  )
   const productQuery = useQuery({
     queryKey: ['product', slug],
     queryFn: ({ signal }) => fetchProduct(slug ?? '', signal),
     enabled: Boolean(slug),
+  })
+  const addToCartMutation = useMutation({
+    mutationFn: (variantId: number) => addCartItem(variantId, 1),
+    onSuccess: (cart) => {
+      queryClient.setQueryData(['cart'], cart)
+    },
   })
 
   if (productQuery.isPending) {
@@ -30,6 +42,9 @@ export function ProductDetailPage() {
   }
 
   const product = productQuery.data
+  const selectedVariant =
+    product.variants.find((variant) => variant.id === selectedVariantId) ??
+    product.variants[0]
 
   return (
     <article className="product-detail">
@@ -61,17 +76,49 @@ export function ProductDetailPage() {
           <div className="variant-list">
             <span>可选规格</span>
             {product.variants.map((variant) => (
-              <div className="variant-row" key={variant.id}>
+              <button
+                type="button"
+                className={`variant-row ${
+                  variant.id === selectedVariant.id ? 'is-selected' : ''
+                }`}
+                key={variant.id}
+                onClick={() => setSelectedVariantId(variant.id)}
+              >
                 <span>{variant.name}</span>
                 <span>{formatMoney(variant.price_cents)}</span>
                 <small>库存 {variant.stock}</small>
-              </div>
+              </button>
             ))}
           </div>
 
-          <button className="cart-placeholder" type="button" disabled>
-            购物车将在下一阶段开放
+          <button
+            className="add-cart-button"
+            type="button"
+            disabled={addToCartMutation.isPending || selectedVariant.stock < 1}
+            onClick={() => {
+              addToCartMutation.mutate(selectedVariant.id)
+            }}
+          >
+            {addToCartMutation.isPending
+              ? '正在加入…'
+              : selectedVariant.stock < 1
+                ? '当前规格无库存'
+                : '加入购物车'}
           </button>
+
+          {addToCartMutation.isSuccess ? (
+            <p className="add-cart-message" role="status">
+              已加入购物车，可以继续挑选或前往购物车查看。
+            </p>
+          ) : null}
+
+          {addToCartMutation.isError ? (
+            <p className="add-cart-message add-cart-message--error" role="alert">
+              {addToCartMutation.error instanceof Error
+                ? addToCartMutation.error.message
+                : '加入购物车失败'}
+            </p>
+          ) : null}
         </div>
       </div>
     </article>
