@@ -115,3 +115,40 @@ class OrderSummary(BaseModel):
     items: list[OrderItemSummary]
 
 
+class PageContext(BaseModel):
+    page: str | None = None
+    product_slug: str | None = None
+    order_no: str | None = None
+
+
+class ConversationCreated(BaseModel):
+    conversation_id: str
+
+
+class ChatMessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    role: str
+    content: str
+    created_at: datetime
+
+
+class ConversationDetail(BaseModel):
+    id: str
+    client_type: str
+    messages: list[ChatMessageOut]
+
+
+class SendMessageRequest(BaseModel):
+    message: str
+    page_context: PageContext = PageContext()
+
+
+class SendMessageResponse(BaseModel):
+    conversation_id: str
+    reply: str
+    messages: list[ChatMessageOut]
+
+
+

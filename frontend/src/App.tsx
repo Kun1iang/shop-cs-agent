@@ -1,5 +1,6 @@
 import { Route, Routes } from 'react-router-dom'
 import { StoreHeader } from './components/StoreHeader'
+import { SupportWidget } from './components/SupportWidget'
 import { CartPage } from './pages/CartPage'
 import { HomePage } from './pages/HomePage'
 import { OrderDetailPage } from './pages/OrderDetailPage'
@@ -24,6 +25,7 @@ function App() {
         <span>桌面好物 · 学习型商城项目</span>
         <span>React + FastAPI + SQLite</span>
       </footer>
+      <SupportWidget />
     </div>
   )
 }
