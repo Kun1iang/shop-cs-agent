@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
     deepseek_timeout_seconds: float = 30.0
+    stream_token_delay_seconds: float = 0.0
+    stream_chunk_size: int = 16
 
     model_config = SettingsConfigDict(
         env_file=BASE_DIR / ".env",

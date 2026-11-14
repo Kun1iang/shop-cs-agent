@@ -1,3 +1,4 @@
+import json
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.llm import get_llm_client
 from app.main import app
-from app.models import ToolCall
+from app.models import HandoffTicket, ToolCall
 
 
 class FakeLLM:
@@ -139,6 +140,68 @@ def test_agent_executes_tool_and_audits_call(
     app.dependency_overrides.pop(get_llm_client, None)
 
 
+class FakeHandoffLLM:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    def complete(
+        self,
+        system_prompt: str,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+    ) -> SimpleNamespace:
+        self.calls += 1
+        if self.calls == 1:
+            return SimpleNamespace(
+                content=None,
+                tool_calls=[
+                    SimpleNamespace(
+                        id="call-handoff-1",
+                        function=SimpleNamespace(
+                            name="handoff_to_human",
+                            arguments='{"reason": "用户要求人工客服"}',
+                        ),
+                    )
+                ],
+            )
+        return SimpleNamespace(
+            content="已经为你创建转人工工单，请稍候。",
+            tool_calls=None,
+        )
+
+
+def test_agent_creates_handoff_ticket(
+    client: TestClient,
+    db_session: Session,
+) -> None:
+    fake_llm = FakeHandoffLLM()
+    app.dependency_overrides[get_llm_client] = lambda: fake_llm
+    conversation_id = client.post("/api/v1/conversations").json()[
+        "conversation_id"
+    ]
+
+    response = client.post(
+        f"/api/v1/conversations/{conversation_id}/messages",
+        json={
+            "message": "我要人工客服",
+            "page_context": {"page": "home"},
+        },
+    )
+
+    assert response.status_code == 200
+    handoff = response.json()["handoff"]
+    assert handoff["status"] == "open"
+    assert handoff["ticket_no"].startswith("HO")
+
+    db_session.expire_all()
+    ticket = db_session.scalar(select(HandoffTicket))
+    assert ticket is not None
+    assert ticket.ticket_no == handoff["ticket_no"]
+    assert ticket.reason == "用户要求人工客服"
+
+    app.dependency_overrides.pop(get_llm_client, None)
+
+
 def test_chat_context_contains_current_user_order(client: TestClient) -> None:
     fake_llm = FakeLLM()
     app.dependency_overrides[get_llm_client] = lambda: fake_llm
@@ -185,4 +248,35 @@ def test_chat_rejects_unknown_conversation(client: TestClient) -> None:
     )
 
     assert response.status_code == 404
+    app.dependency_overrides.pop(get_llm_client, None)
+
+
+def test_stream_chat_returns_sse_events(client: TestClient) -> None:
+    fake_llm = FakeLLM()
+    app.dependency_overrides[get_llm_client] = lambda: fake_llm
+    conversation_id = client.post("/api/v1/conversations").json()[
+        "conversation_id"
+    ]
+
+    with client.stream(
+        "POST",
+        f"/api/v1/conversations/{conversation_id}/messages/stream",
+        json={
+            "message": "你好",
+            "page_context": {"page": "home"},
+        },
+    ) as response:
+        body = "".join(response.iter_text())
+
+    assert response.status_code == 200
+    assert response.headers["content-type"].startswith("text/event-stream")
+    assert "event: meta" in body
+    assert "event: token" in body
+    assert "event: done" in body
+    tokens = [
+        json.loads(block.split("data: ", 1)[1])["text"]
+        for block in body.split("\n\n")
+        if block.startswith("event: token")
+    ]
+    assert "我看到了你的订单信息" in "".join(tokens)
     app.dependency_overrides.pop(get_llm_client, None)

@@ -4,7 +4,8 @@ import { useLocation } from 'react-router-dom'
 import {
   createConversation,
   fetchConversation,
-  sendSupportMessage,
+  streamSupportMessage,
+  type SendMessageResponse,
   type SupportPageContext,
 } from '../api/support'
 
@@ -43,6 +44,14 @@ export function SupportWidget() {
     localStorage.getItem(CONVERSATION_STORAGE_KEY),
   )
   const [draft, setDraft] = useState('')
+  const [streamingText, setStreamingText] = useState('')
+  const [agentMeta, setAgentMeta] = useState<{
+    toolCallCount: number
+    handoff: SendMessageResponse['handoff']
+  }>({
+    toolCallCount: 0,
+    handoff: null,
+  })
   const messageEndRef = useRef<HTMLDivElement>(null)
   const queryClient = useQueryClient()
   const pageContext = getPageContext(location.pathname)
@@ -76,14 +85,26 @@ export function SupportWidget() {
         setConversationId(activeConversationId)
         localStorage.setItem(CONVERSATION_STORAGE_KEY, activeConversationId)
       }
-      return sendSupportMessage(
+      return streamSupportMessage(
         activeConversationId,
         message,
         pageContext,
+        (event) => {
+          if (event.type === 'token') {
+            setStreamingText((current) => current + event.text)
+          } else if (event.type === 'meta') {
+            setAgentMeta({
+              toolCallCount: event.tool_call_count,
+              handoff: event.handoff,
+            })
+          }
+        },
       )
     },
     onMutate: () => {
       setDraft('')
+      setStreamingText('')
+      setAgentMeta({ toolCallCount: 0, handoff: null })
     },
     onSuccess: (response) => {
       queryClient.setQueryData(
@@ -94,6 +115,10 @@ export function SupportWidget() {
           messages: response.messages,
         },
       )
+      setStreamingText('')
+    },
+    onError: () => {
+      setStreamingText('')
     },
   })
 
@@ -188,7 +213,13 @@ export function SupportWidget() {
             ) : null}
 
             {sendMutation.isPending ? (
-              <div className="support-typing">小栖正在思考…</div>
+              streamingText ? (
+                <div className="support-message support-message--assistant">
+                  {streamingText}
+                </div>
+              ) : (
+                <div className="support-typing">小栖正在思考…</div>
+              )
             ) : null}
             <div ref={messageEndRef} />
           </div>
@@ -199,6 +230,19 @@ export function SupportWidget() {
                 ? sendMutation.error.message
                 : '客服暂时不可用'}
             </p>
+          ) : null}
+
+          {agentMeta.toolCallCount > 0 ? (
+            <div className="support-tool-count">
+              已调用 {agentMeta.toolCallCount} 个业务工具
+            </div>
+          ) : null}
+
+          {agentMeta.handoff ? (
+            <div className="support-handoff" role="status">
+              <strong>已创建人工工单</strong>
+              <span>工单号：{agentMeta.handoff.ticket_no}</span>
+            </div>
           ) : null}
 
           <form className="support-composer" onSubmit={submitMessage}>

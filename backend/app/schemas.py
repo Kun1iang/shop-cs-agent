@@ -145,10 +145,18 @@ class SendMessageRequest(BaseModel):
     page_context: PageContext = PageContext()
 
 
+class HandoffInfo(BaseModel):
+    ticket_no: str
+    status: str
+    reason: str
+
+
 class SendMessageResponse(BaseModel):
     conversation_id: str
     reply: str
     messages: list[ChatMessageOut]
+    tool_call_count: int
+    handoff: HandoffInfo | None = None
 
 
 

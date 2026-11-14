@@ -7,7 +7,21 @@ from sqlalchemy.orm import Session, selectinload
 from app import agent_service
 from app.llm import DeepSeekClient
 from app.models import Conversation, ConversationMessage, User
-from app.schemas import ConversationDetail, PageContext
+from app.schemas import ConversationDetail, HandoffInfo, PageContext
+
+
+class ConversationResult:
+    def __init__(
+        self,
+        reply: str,
+        messages: list[ConversationMessage],
+        tool_call_count: int,
+        handoff: HandoffInfo | None,
+    ) -> None:
+        self.reply = reply
+        self.messages = messages
+        self.tool_call_count = tool_call_count
+        self.handoff = handoff
 
 
 class ConversationNotFoundError(Exception):
@@ -67,7 +81,7 @@ def send_message(
     message: str,
     page_context: PageContext,
     llm_client: DeepSeekClient,
-) -> tuple[str, list[ConversationMessage]]:
+) -> ConversationResult:
     conversation = get_conversation(db, user.id, conversation_id)
     history = conversation.messages[-10:]
     llm_messages = [
@@ -85,6 +99,15 @@ def send_message(
         llm_client,
     )
     reply = result.reply
+    handoff = (
+        HandoffInfo(
+            ticket_no=result.handoff_ticket_no,
+            status="open",
+            reason="已创建转人工工单",
+        )
+        if result.handoff_ticket_no
+        else None
+    )
 
     user_message = ConversationMessage(
         conversation_id=conversation.id,
@@ -101,5 +124,10 @@ def send_message(
     db.commit()
 
     updated = get_conversation(db, user.id, conversation.id)
-    return reply, updated.messages
+    return ConversationResult(
+        reply=reply,
+        messages=updated.messages,
+        tool_call_count=result.tool_call_count,
+        handoff=handoff,
+    )
 

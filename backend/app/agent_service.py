@@ -1,6 +1,8 @@
 import json
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from typing import Any
+from uuid import uuid4
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session, selectinload
@@ -8,7 +10,7 @@ from sqlalchemy.orm import Session, selectinload
 from app import cart_service
 from app.knowledge_base import knowledge_base
 from app.llm import DeepSeekClient, LLMResponseError
-from app.models import Product, ToolCall, User
+from app.models import HandoffTicket, Product, ToolCall, User
 from app.order_service import list_orders
 from app.prompts import CUSTOMER_SERVICE_SYSTEM_PROMPT
 from app.schemas import PageContext
@@ -83,6 +85,24 @@ TOOL_DEFINITIONS = [
             },
         },
     },
+    {
+        "type": "function",
+        "function": {
+            "name": "handoff_to_human",
+            "description": "创建转人工工单。用户明确要求人工，或问题无法安全处理时使用。",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "reason": {
+                        "type": "string",
+                        "description": "转人工原因",
+                    }
+                },
+                "required": ["reason"],
+                "additionalProperties": False,
+            },
+        },
+    },
 ]
 
 
@@ -90,6 +110,7 @@ TOOL_DEFINITIONS = [
 class AgentResult:
     reply: str
     tool_call_count: int
+    handoff_ticket_no: str | None = None
 
 
 def order_to_dict(order) -> dict:
@@ -123,6 +144,7 @@ class SupportToolExecutor:
         self.db = db
         self.user = user
         self.conversation_id = conversation_id
+        self.handoff_ticket_no: str | None = None
 
     def execute(self, name: str, arguments: dict[str, Any]) -> str:
         status = "success"
@@ -211,6 +233,27 @@ class SupportToolExecutor:
                 for result in results
             ]
 
+        if name == "handoff_to_human":
+            reason = str(arguments["reason"]).strip() or "用户需要人工协助"
+            ticket_no = (
+                f"HO{datetime.now(UTC):%Y%m%d%H%M%S}"
+                f"{uuid4().hex[:6].upper()}"
+            )
+            self.db.add(
+                HandoffTicket(
+                    ticket_no=ticket_no,
+                    user_id=self.user.id,
+                    conversation_id=self.conversation_id,
+                    reason=reason,
+                )
+            )
+            self.handoff_ticket_no = ticket_no
+            return {
+                "ticket_no": ticket_no,
+                "status": "open",
+                "reason": reason,
+            }
+
         raise ValueError(f"未知工具：{name}")
 
 
@@ -272,6 +315,7 @@ def run_support_agent(
             return AgentResult(
                 reply=content.strip(),
                 tool_call_count=tool_call_count,
+                handoff_ticket_no=executor.handoff_ticket_no,
             )
 
         messages.append(

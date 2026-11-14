@@ -347,3 +347,36 @@ class ToolCall(Base):
         nullable=False,
     )
 
+
+class HandoffTicket(Base):
+    __tablename__ = "handoff_tickets"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    ticket_no: Mapped[str] = mapped_column(
+        String(40),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        index=True,
+        nullable=False,
+    )
+    conversation_id: Mapped[str] = mapped_column(
+        ForeignKey("conversations.id"),
+        index=True,
+        nullable=False,
+    )
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(30),
+        default="open",
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
