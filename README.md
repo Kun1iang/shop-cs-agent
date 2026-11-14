@@ -1,4 +1,4 @@
-# ShopSystem & Customer Service Agent
+# ShopSystem-CustomerService-Agent
 
 响应式 Web/PWA 商城与全局客服 Agent。
 

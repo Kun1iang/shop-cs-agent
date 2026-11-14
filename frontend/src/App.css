@@ -1,0 +1,188 @@
+.app-shell {
+  width: min(1120px, calc(100% - 40px));
+  min-height: 100svh;
+  margin: 0 auto;
+  padding: 72px 0 40px;
+  box-sizing: border-box;
+}
+
+.hero {
+  max-width: 760px;
+  margin-bottom: 48px;
+}
+
+.eyebrow {
+  display: inline-flex;
+  margin-bottom: 18px;
+  padding: 7px 11px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--accent);
+  background: var(--surface);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.hero h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: clamp(2.8rem, 9vw, 6.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.075em;
+}
+
+.hero p {
+  max-width: 680px;
+  margin: 26px 0 0;
+  color: var(--text-muted);
+  font-size: clamp(1rem, 2.4vw, 1.22rem);
+  line-height: 1.75;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.status-card {
+  min-height: 220px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  box-sizing: border-box;
+}
+
+.status-card:first-child {
+  grid-column: span 2;
+  background:
+    radial-gradient(circle at 90% 20%, var(--accent-glow), transparent 36%),
+    var(--surface);
+}
+
+.card-label {
+  display: block;
+  margin-bottom: 32px;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 750;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.status-value {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text-strong);
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
+  font-weight: 760;
+  letter-spacing: -0.045em;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 7px color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.status-value--pending {
+  color: #9a6a13;
+}
+
+.status-value--success {
+  color: #19724a;
+}
+
+.status-value--error {
+  color: #b42318;
+}
+
+.status-detail {
+  margin: 18px 0 0;
+  color: var(--text-muted);
+  line-height: 1.65;
+}
+
+.status-card code {
+  display: inline-block;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-strong);
+  background: var(--code-background);
+  font-size: 0.85rem;
+}
+
+.status-card strong {
+  color: var(--text-strong);
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.retry-button {
+  margin-top: 20px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 10px;
+  color: white;
+  background: var(--text-strong);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.retry-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+  margin-top: 40px;
+  padding-top: 22px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 760px) {
+  .app-shell {
+    width: min(100% - 28px, 560px);
+    padding-top: 42px;
+  }
+
+  .hero {
+    margin-bottom: 30px;
+  }
+
+  .hero p {
+    margin-top: 18px;
+  }
+
+  .status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .status-card:first-child {
+    grid-column: auto;
+  }
+
+  .status-card {
+    min-height: 0;
+    padding: 22px;
+    border-radius: 18px;
+  }
+
+  .card-label {
+    margin-bottom: 22px;
+  }
+}
+

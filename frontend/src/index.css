@@ -1,0 +1,60 @@
+:root {
+  font-family:
+    Inter, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+  color: #191817;
+  background: #f1f0ec;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --text-strong: #191817;
+  --text-muted: #6f6a61;
+  --surface: rgba(255, 255, 255, 0.82);
+  --border: rgba(25, 24, 23, 0.12);
+  --code-background: #f5f3ee;
+  --accent: #2f6652;
+  --accent-glow: rgba(80, 154, 124, 0.18);
+  --shadow: 0 18px 50px rgba(43, 39, 32, 0.07);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0.5)),
+    repeating-linear-gradient(
+      90deg,
+      transparent 0,
+      transparent 79px,
+      rgba(25, 24, 23, 0.035) 80px
+    );
+}
+
+body {
+  min-width: 320px;
+  min-height: 100svh;
+  margin: 0;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
