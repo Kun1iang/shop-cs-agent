@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel
 
 from app.api.cart import router as cart_router
+from app.api.orders import router as orders_router
 from app.api.products import router as products_router
 
 app = FastAPI(
@@ -26,4 +27,5 @@ def health_check() -> HealthResponse:
 
 app.include_router(products_router)
 app.include_router(cart_router)
+app.include_router(orders_router)
 

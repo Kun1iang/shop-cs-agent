@@ -194,3 +194,83 @@ class CartItem(Base):
     cart: Mapped[Cart] = relationship(back_populates="items")
     variant: Mapped[ProductVariant] = relationship()
 
+
+class Order(Base):
+    __tablename__ = "orders"
+    __table_args__ = (
+        CheckConstraint("subtotal_cents >= 0", name="ck_order_subtotal_non_negative"),
+        CheckConstraint("total_cents >= 0", name="ck_order_total_non_negative"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_no: Mapped[str] = mapped_column(
+        String(40),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"),
+        index=True,
+        nullable=False,
+    )
+    status: Mapped[str] = mapped_column(String(30), index=True, nullable=False)
+    subtotal_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    shipping_fee_cents: Mapped[int] = mapped_column(
+        Integer,
+        default=0,
+        nullable=False,
+    )
+    total_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(
+        String(100),
+        unique=True,
+        index=True,
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        default=lambda: datetime.now(UTC),
+        nullable=False,
+    )
+
+    items: Mapped[list["OrderItem"]] = relationship(
+        back_populates="order",
+        order_by="OrderItem.id",
+        cascade="all, delete-orphan",
+    )
+
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+    __table_args__ = (
+        CheckConstraint("quantity > 0", name="ck_order_item_quantity_positive"),
+        CheckConstraint(
+            "line_total_cents >= 0",
+            name="ck_order_item_total_non_negative",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    order_id: Mapped[int] = mapped_column(
+        ForeignKey("orders.id"),
+        index=True,
+        nullable=False,
+    )
+    product_id: Mapped[int] = mapped_column(
+        ForeignKey("products.id"),
+        nullable=False,
+    )
+    variant_id: Mapped[int] = mapped_column(
+        ForeignKey("product_variants.id"),
+        nullable=False,
+    )
+    product_name: Mapped[str] = mapped_column(String(160), nullable=False)
+    variant_name: Mapped[str] = mapped_column(String(120), nullable=False)
+    sku: Mapped[str] = mapped_column(String(80), nullable=False)
+    unit_price_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
+    line_total_cents: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    order: Mapped[Order] = relationship(back_populates="items")
+

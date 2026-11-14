@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel, ConfigDict
 
 
@@ -84,4 +86,32 @@ class CartSummary(BaseModel):
     items: list[CartItemSummary]
     item_count: int
     subtotal_cents: int
+
+
+class OrderItemSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    product_id: int
+    variant_id: int
+    product_name: str
+    variant_name: str
+    sku: str
+    unit_price_cents: int
+    quantity: int
+    line_total_cents: int
+
+
+class OrderSummary(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    order_no: str
+    status: str
+    subtotal_cents: int
+    shipping_fee_cents: int
+    total_cents: int
+    created_at: datetime
+    items: list[OrderItemSummary]
+
 

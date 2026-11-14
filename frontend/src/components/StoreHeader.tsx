@@ -36,6 +36,9 @@ export function StoreHeader() {
           购物车
           <span>{cartQuery.data?.item_count ?? 0}</span>
         </Link>
+        <Link className="orders-link" to="/orders">
+          订单
+        </Link>
       </div>
     </header>
   )

@@ -2,6 +2,8 @@ import { Route, Routes } from 'react-router-dom'
 import { StoreHeader } from './components/StoreHeader'
 import { CartPage } from './pages/CartPage'
 import { HomePage } from './pages/HomePage'
+import { OrderDetailPage } from './pages/OrderDetailPage'
+import { OrdersPage } from './pages/OrdersPage'
 import { ProductDetailPage } from './pages/ProductDetailPage'
 import './App.css'
 
@@ -13,6 +15,8 @@ function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/cart" element={<CartPage />} />
+          <Route path="/orders" element={<OrdersPage />} />
+          <Route path="/orders/:orderNo" element={<OrderDetailPage />} />
           <Route path="/products/:slug" element={<ProductDetailPage />} />
         </Routes>
       </main>

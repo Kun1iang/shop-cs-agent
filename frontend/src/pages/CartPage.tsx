@@ -1,14 +1,23 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   deleteCartItem,
   fetchCart,
   updateCartItem,
 } from '../api/cart'
+import { checkoutOrder } from '../api/orders'
 import { formatMoney } from '../utils/money'
+
+function createIdempotencyKey(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {
+    return crypto.randomUUID()
+  }
+  return `checkout-${Date.now()}-${Math.random().toString(16).slice(2)}`
+}
 
 export function CartPage() {
   const queryClient = useQueryClient()
+  const navigate = useNavigate()
   const cartQuery = useQuery({
     queryKey: ['cart'],
     queryFn: ({ signal }) => fetchCart(signal),
@@ -26,6 +35,15 @@ export function CartPage() {
     mutationFn: deleteCartItem,
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['cart'] })
+    },
+  })
+  const checkoutMutation = useMutation({
+    mutationFn: checkoutOrder,
+    onSuccess: async (order) => {
+      await queryClient.invalidateQueries({ queryKey: ['cart'] })
+      queryClient.setQueryData(['order', order.order_no], order)
+      await queryClient.invalidateQueries({ queryKey: ['orders'] })
+      navigate(`/orders/${order.order_no}`)
     },
   })
 
@@ -166,9 +184,25 @@ export function CartPage() {
             <strong className="cart-total">
               {formatMoney(cart.subtotal_cents)}
             </strong>
-            <button className="checkout-placeholder" type="button" disabled>
-              模拟结算将在下一阶段开放
+            <button
+              className="checkout-button"
+              type="button"
+              disabled={checkoutMutation.isPending}
+              onClick={() => {
+                checkoutMutation.mutate(createIdempotencyKey())
+              }}
+            >
+              {checkoutMutation.isPending
+                ? '正在创建订单…'
+                : '确认模拟支付并下单'}
             </button>
+            {checkoutMutation.isError ? (
+              <p className="cart-error" role="alert">
+                {checkoutMutation.error instanceof Error
+                  ? checkoutMutation.error.message
+                  : '模拟结算失败'}
+              </p>
+            ) : null}
           </aside>
         </div>
       )}
