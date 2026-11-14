@@ -1,6 +1,8 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 
+from app.api.products import router as products_router
+
 app = FastAPI(
     title="Ecom Support API",
     version="0.1.0",
@@ -19,4 +21,7 @@ class HealthResponse(BaseModel):
 )
 def health_check() -> HealthResponse:
     return HealthResponse()
+
+
+app.include_router(products_router)
 
